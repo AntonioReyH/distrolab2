@@ -53,8 +53,8 @@ define run_vm
 		else \
 			$(NEED_SUDO) $(COMPOSE_BIN) $(COMPOSE_ARGS) build --no-cache $$svc || exit $$?; \
 		fi; \
-	done; \
-	@rm -f .env; \
+	done
+	@rm -f .env
 	@echo "Build finished for $(1)"
 endef
 

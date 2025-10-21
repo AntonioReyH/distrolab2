@@ -12,6 +12,29 @@ VM2_SVCS=bd2 falabellox
 VM3_SVCS=bd3 parisio
 VM4_SVCS=broker
 
+# Detect compose command at parse time (prefer docker-compose, fallback to `docker compose`)
+ifeq (,$(shell command -v docker-compose 2>/dev/null))
+	ifeq (,$(shell docker compose version >/dev/null 2>&1; echo $?))
+		# docker compose not available as subcommand
+		ifneq (,$(shell command -v docker 2>/dev/null))
+			COMPOSE_BIN=docker
+			COMPOSE_ARGS=compose
+		else
+			$(error neither docker-compose nor docker (with compose) found)
+		endif
+	else
+		# This branch normally shouldn't run because above shell returns empty; keep fallback
+		COMPOSE_BIN=docker
+		COMPOSE_ARGS=compose
+	endif
+else
+	COMPOSE_BIN=docker-compose
+	COMPOSE_ARGS=
+endif
+
+# Determine if sudo is required (empty if root)
+NEED_SUDO := $(shell if [ "`id -u`" != "0" ]; then echo sudo; fi)
+
 # Genera .env temporal y ejecuta compose para los servicios indicados
 define run_vm
 	@echo "Generating .env for $(1)"
@@ -21,19 +44,11 @@ define run_vm
 	@printf 'BD2_ADDR=%s\n' "${BD2_ADDR:-$(7)}" >> .env
 	@printf 'BD3_ADDR=%s\n' "${BD3_ADDR:-$(8)}" >> .env
 	@echo "Building services (in order): ${2}"
-	@echo "Detecting compose command and sudo requirement..."
-	@if command -v docker-compose >/dev/null 2>&1; then \
-		COMPOSE_BIN="docker-compose"; COMPOSE_SUB=""; \
-	elif command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then \
-		COMPOSE_BIN="docker"; COMPOSE_SUB="compose"; \
-	else \
-		echo "ERROR: neither docker-compose nor 'docker compose' available" >&2; exit 1; \
-	fi; \
-	if [ "$$(id -u)" -ne 0 ]; then SUDO_CMD="sudo"; else SUDO_CMD=""; fi; \
-	# Build each service image only (avoid starting unrelated containers)
-	for svc in $(2); do \
+	@echo "Using compose: $(COMPOSE_BIN) $(COMPOSE_ARGS)  (sudo: $(NEED_SUDO))"
+	@# Build each service image only (avoid starting unrelated containers)
+	@for svc in ${2}; do \
 		echo "-> Building $$svc"; \
-		$${SUDO_CMD} $${COMPOSE_BIN} $${COMPOSE_SUB} build --no-cache --progress=plain $$svc || exit $$?; \
+		$(NEED_SUDO) $(COMPOSE_BIN) $(COMPOSE_ARGS) build --no-cache --progress=plain $$svc || exit $$?; \
 	done; \
 	@rm -f .env; \
 	@echo "Build finished for $(1)"

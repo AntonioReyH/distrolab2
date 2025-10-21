@@ -15,14 +15,29 @@ VM4_SVCS=broker
 # Genera .env temporal y ejecuta compose para los servicios indicados
 define run_vm
 	@echo "Generating .env for $(1)"
-	@echo "BROKER_ADDR=${BROKER_ADDR:-${4}}" > .env.vm
-	@echo "DB_ADDRESSES=${DB_ADDRESSES:-${5}}" >> .env.vm
-	@echo "BD1_ADDR=${BD1_ADDR:-${6}}" >> .env.vm
-	@echo "BD2_ADDR=${BD2_ADDR:-${7}}" >> .env.vm
-	@echo "BD3_ADDR=${BD3_ADDR:-${8}}" >> .env.vm
+	@cat > .env <<EOF
+BROKER_ADDR=${BROKER_ADDR:-${4}}
+DB_ADDRESSES=${DB_ADDRESSES:-${5}}
+BD1_ADDR=${BD1_ADDR:-${6}}
+BD2_ADDR=${BD2_ADDR:-${7}}
+BD3_ADDR=${BD3_ADDR:-${8}}
+EOF
 	@echo "Starting services: ${2}"
-	@set -a; . ./.env.vm; set +a; docker compose up -d --build ${2}
-	@rm -f .env.vm
+	@echo "Detecting compose command and sudo requirement..."
+	@sh -c '
+	if docker compose version >/dev/null 2>&1; then
+		COMPOSE_CMD="docker compose"
+	elif command -v docker-compose >/dev/null 2>&1; then
+		COMPOSE_CMD="docker-compose"
+	else
+		echo "ERROR: neither 'docker compose' nor 'docker-compose' found" >&2; exit 1
+	fi
+	# If we're not root, run docker with sudo
+	if [ "$(id -u)" -ne 0 ]; then SUDO="sudo"; else SUDO=""; fi
+	# Run compose
+	$${SUDO} $${COMPOSE_CMD} up -d --build ${2}
+	'
+	@rm -f .env
 endef
 
 .PHONY: docker-VM1 docker-VM2 docker-VM3 docker-VM4 docker-all

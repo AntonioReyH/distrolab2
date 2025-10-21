@@ -58,19 +58,48 @@ define run_vm
 	@echo "Build finished for $(1)"
 endef
 
+# Run (up) services for a VM without starting dependencies on that host
+define run_vm_up
+	@echo "Generating .env for $(1)"
+	@printf 'BROKER_ADDR=%s\n' "${BROKER_ADDR:-$(4)}" > .env
+	@printf 'DB_ADDRESSES=%s\n' "${DB_ADDRESSES:-$(5)}" >> .env
+	@printf 'BD1_ADDR=%s\n' "${BD1_ADDR:-$(6)}" >> .env
+	@printf 'BD2_ADDR=%s\n' "${BD2_ADDR:-$(7)}" >> .env
+	@printf 'BD3_ADDR=%s\n' "${BD3_ADDR:-$(8)}" >> .env
+	@echo "Starting services (no-deps): ${2}"
+	@for svc in ${2}; do \
+		echo "-> Up $$svc"; \
+		$(NEED_SUDO) $(COMPOSE_BIN) $(COMPOSE_ARGS) up -d --no-deps $$svc || exit $$?; \
+	done
+	@rm -f .env
+	@echo "Services started for $(1)"
+endef
+
 .PHONY: docker-VM1 docker-VM2 docker-VM3 docker-VM4 docker-all
 
 docker-VM1:
 	$(call run_vm,VM1,${VM1_SVCS},${VM1_IP},${VM4_IP},bd1:${VM2_IP}:50052,bd2:${VM3_IP}:50053,bd3:${VM4_IP}:50054,${VM1_IP}:50052,${VM2_IP}:50053,${VM3_IP}:50054)
 
+docker-VM1-up:
+	$(call run_vm_up,VM1,${VM1_SVCS},${VM1_IP},${VM4_IP},bd1:${VM2_IP}:50052,bd2:${VM3_IP}:50053,bd3:${VM4_IP}:50054,${VM1_IP}:50052,${VM2_IP}:50053,${VM3_IP}:50054)
+
 docker-VM2:
 	$(call run_vm,VM2,${VM2_SVCS},${VM2_IP},${VM4_IP},bd1:${VM1_IP}:50052,bd2:${VM3_IP}:50053,bd3:${VM4_IP}:50054,${VM1_IP}:50052,${VM2_IP}:50053,${VM3_IP}:50054)
+
+docker-VM2-up:
+	$(call run_vm_up,VM2,${VM2_SVCS},${VM2_IP},${VM4_IP},bd1:${VM1_IP}:50052,bd2:${VM3_IP}:50053,bd3:${VM4_IP}:50054,${VM1_IP}:50052,${VM2_IP}:50053,${VM3_IP}:50054)
 
 docker-VM3:
 	$(call run_vm,VM3,${VM3_SVCS},${VM3_IP},${VM4_IP},bd1:${VM1_IP}:50052,bd2:${VM2_IP}:50053,bd3:${VM4_IP}:50054,${VM1_IP}:50052,${VM2_IP}:50053,${VM3_IP}:50054)
 
+docker-VM3-up:
+	$(call run_vm_up,VM3,${VM3_SVCS},${VM3_IP},${VM4_IP},bd1:${VM1_IP}:50052,bd2:${VM2_IP}:50053,bd3:${VM4_IP}:50054,${VM1_IP}:50052,${VM2_IP}:50053,${VM3_IP}:50054)
+
 docker-VM4:
 	$(call run_vm,VM4,${VM4_SVCS},${VM4_IP},${VM4_IP},bd1:${VM1_IP}:50052,bd2:${VM2_IP}:50053,bd3:${VM3_IP}:50054,${VM1_IP}:50052,${VM2_IP}:50053,${VM3_IP}:50054)
+
+docker-VM4-up:
+	$(call run_vm_up,VM4,${VM4_SVCS},${VM4_IP},${VM4_IP},bd1:${VM1_IP}:50052,bd2:${VM2_IP}:50053,bd3:${VM3_IP}:50054,${VM1_IP}:50052,${VM2_IP}:50053,${VM3_IP}:50054)
 
 # Levanta todo localmente (útil para pruebas)
 docker-all:

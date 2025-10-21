@@ -16,11 +16,11 @@ VM4_SVCS=broker
 define run_vm
 	@echo "Generating .env for $(1)"
 	@cat > .env <<EOF
-BROKER_ADDR=${BROKER_ADDR:-${4}}
-DB_ADDRESSES=${DB_ADDRESSES:-${5}}
-BD1_ADDR=${BD1_ADDR:-${6}}
-BD2_ADDR=${BD2_ADDR:-${7}}
-BD3_ADDR=${BD3_ADDR:-${8}}
+BROKER_ADDR=${BROKER_ADDR:-$(4)}
+DB_ADDRESSES=${DB_ADDRESSES:-$(5)}
+BD1_ADDR=${BD1_ADDR:-$(6)}
+BD2_ADDR=${BD2_ADDR:-$(7)}
+BD3_ADDR=${BD3_ADDR:-$(8)}
 EOF
 	@echo "Starting services: ${2}"
 	@echo "Detecting compose command and sudo requirement..."
@@ -35,7 +35,7 @@ EOF
 	# If we're not root, run docker with sudo
 	if [ "$(id -u)" -ne 0 ]; then SUDO="sudo"; else SUDO=""; fi
 	# Run compose
-	$${SUDO} $${COMPOSE_CMD} up -d --build ${2}
+	$${SUDO} $${COMPOSE_CMD} up -d --build $(2)
 	'
 	@rm -f .env
 endef

@@ -48,7 +48,11 @@ define run_vm
 	@# Build each service image only (avoid starting unrelated containers)
 	@for svc in ${2}; do \
 		echo "-> Building $$svc"; \
-		$(NEED_SUDO) $(COMPOSE_BIN) $(COMPOSE_ARGS) build --no-cache --progress=plain $$svc || exit $$?; \
+		if [ "$(COMPOSE_BIN)" = "docker" ]; then \
+			$(NEED_SUDO) $(COMPOSE_BIN) $(COMPOSE_ARGS) build --no-cache --progress=plain $$svc || exit $$?; \
+		else \
+			$(NEED_SUDO) $(COMPOSE_BIN) $(COMPOSE_ARGS) build --no-cache $$svc || exit $$?; \
+		fi; \
 	done; \
 	@rm -f .env; \
 	@echo "Build finished for $(1)"

@@ -22,19 +22,7 @@ define run_vm
 	@printf 'BD3_ADDR=%s\n' "${BD3_ADDR:-$(8)}" >> .env
 	@echo "Starting services: ${2}"
 	@echo "Detecting compose command and sudo requirement..."
-	@sh -c '
-	if docker compose version >/dev/null 2>&1; then
-		COMPOSE_CMD="docker compose"
-	elif command -v docker-compose >/dev/null 2>&1; then
-		COMPOSE_CMD="docker-compose"
-	else
-		echo "ERROR: neither 'docker compose' nor 'docker-compose' found" >&2; exit 1
-	fi
-	# If we're not root, run docker with sudo
-	if [ "$(id -u)" -ne 0 ]; then SUDO="sudo"; else SUDO=""; fi
-	# Run compose
-	$${SUDO} $${COMPOSE_CMD} up -d --build $(2)
-	'
+	@sh -c 'if docker compose version >/dev/null 2>&1; then COMPOSE_CMD="docker compose"; elif command -v docker-compose >/dev/null 2>&1; then COMPOSE_CMD="docker-compose"; else echo "ERROR: neither docker compose nor docker-compose found" >&2; exit 1; fi; if [ "$(id -u)" -ne 0 ]; then SUDO="sudo"; else SUDO=""; fi; $${SUDO} $${COMPOSE_CMD} up -d --build $(2)'
 	@rm -f .env
 endef
 

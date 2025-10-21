@@ -1,0 +1,68 @@
+services:
+  broker:
+    build:
+      context: ./Broker_C1
+      dockerfile: Broker/Dockerfile
+    ports:
+      - "50051:50051"
+    environment:
+      - BROKER_ADDR=${BROKER_ADDR:-:50051}
+      - DB_ADDRESSES=${DB_ADDRESSES:-bd1:50052,bd2:50053,bd3:50054}
+    depends_on:
+      - bd1
+      - bd2
+      - bd3
+
+  bd1:
+    build:
+      context: ./Riploy_BD1_C2
+      dockerfile: BD1/Dockerfile
+    ports:
+      - "50052:50052"
+    environment:
+      - BD1_ADDR=${BD1_ADDR:-:50052}
+
+  bd2:
+    build:
+      context: ./Falabellox_BD2_C3
+      dockerfile: BD2/Dockerfile
+    ports:
+      - "50053:50053"
+    environment:
+      - BD2_ADDR=${BD2_ADDR:-:50053}
+
+  bd3:
+    build:
+      context: ./Parisio_BD3
+      dockerfile: BD3/Dockerfile
+    ports:
+      - "50054:50054"
+    environment:
+      - BD3_ADDR=${BD3_ADDR:-:50054}
+
+  riploy:
+    build:
+      context: ./Riploy_BD1_C2
+      dockerfile: Riploy/Dockerfile
+    depends_on:
+      - broker
+    environment:
+      - BROKER_ADDR=${BROKER_ADDR:-broker:50051}
+
+  falabellox:
+    build:
+      context: ./Falabellox_BD2_C3
+      dockerfile: Falabellox/Dockerfile
+    depends_on:
+      - broker
+    environment:
+      - BROKER_ADDR=${BROKER_ADDR:-broker:50051}
+
+  parisio:
+    build:
+      context: ./Parisio_BD3
+      dockerfile: Parisio/Dockerfile
+    depends_on:
+      - broker
+    environment:
+      - BROKER_ADDR=${BROKER_ADDR:-broker:50051}

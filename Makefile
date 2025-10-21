@@ -21,7 +21,7 @@ define run_vm
 	@echo "BD2_ADDR=${BD2_ADDR:-${7}}" >> .env.vm
 	@echo "BD3_ADDR=${BD3_ADDR:-${8}}" >> .env.vm
 	@echo "Starting services: ${2}"
-	@docker compose --env-file .env.vm up -d --build ${2}
+	@set -a; . ./.env.vm; set +a; docker compose up -d --build ${2}
 	@rm -f .env.vm
 endef
 

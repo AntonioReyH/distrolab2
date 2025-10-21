@@ -22,20 +22,20 @@ define run_vm
 	@printf 'BD3_ADDR=%s\n' "${BD3_ADDR:-$(8)}" >> .env
 	@echo "Building services (in order): ${2}"
 	@echo "Detecting compose command and sudo requirement..."
-	@if docker compose version >/dev/null 2>&1; then \
-		COMPOSE_CMD="docker compose"; \
-	elif command -v docker-compose >/dev/null 2>&1; then \
-		COMPOSE_CMD="docker-compose"; \
+	@if command -v docker-compose >/dev/null 2>&1; then \
+		COMPOSE_BIN="docker-compose"; COMPOSE_SUB=""; \
+	elif command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then \
+		COMPOSE_BIN="docker"; COMPOSE_SUB="compose"; \
 	else \
-		echo "ERROR: neither docker compose nor docker-compose found" >&2; exit 1; \
+		echo "ERROR: neither docker-compose nor 'docker compose' available" >&2; exit 1; \
 	fi; \
 	if [ "$$(id -u)" -ne 0 ]; then SUDO_CMD="sudo"; else SUDO_CMD=""; fi; \
 	# Build each service image only (avoid starting unrelated containers)
 	for svc in $(2); do \
 		echo "-> Building $$svc"; \
-		$${SUDO_CMD} $${COMPOSE_CMD} build --no-cache --progress=plain $$svc || exit $$?; \
+		$${SUDO_CMD} $${COMPOSE_BIN} $${COMPOSE_SUB} build --no-cache --progress=plain $$svc || exit $$?; \
 	done; \
-	@rm -f .env
+	@rm -f .env; \
 	@echo "Build finished for $(1)"
 endef
 

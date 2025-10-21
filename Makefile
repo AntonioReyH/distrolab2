@@ -15,13 +15,11 @@ VM4_SVCS=broker
 # Genera .env temporal y ejecuta compose para los servicios indicados
 define run_vm
 	@echo "Generating .env for $(1)"
-	@cat > .env <<EOF
-BROKER_ADDR=${BROKER_ADDR:-$(4)}
-DB_ADDRESSES=${DB_ADDRESSES:-$(5)}
-BD1_ADDR=${BD1_ADDR:-$(6)}
-BD2_ADDR=${BD2_ADDR:-$(7)}
-BD3_ADDR=${BD3_ADDR:-$(8)}
-EOF
+	@printf 'BROKER_ADDR=%s\n' "${BROKER_ADDR:-$(4)}" > .env
+	@printf 'DB_ADDRESSES=%s\n' "${DB_ADDRESSES:-$(5)}" >> .env
+	@printf 'BD1_ADDR=%s\n' "${BD1_ADDR:-$(6)}" >> .env
+	@printf 'BD2_ADDR=%s\n' "${BD2_ADDR:-$(7)}" >> .env
+	@printf 'BD3_ADDR=%s\n' "${BD3_ADDR:-$(8)}" >> .env
 	@echo "Starting services: ${2}"
 	@echo "Detecting compose command and sudo requirement..."
 	@sh -c '

@@ -38,11 +38,11 @@ NEED_SUDO := $(shell if [ "`id -u`" != "0" ]; then echo sudo; fi)
 # Genera .env temporal y ejecuta compose para los servicios indicados
 define run_vm
 	@echo "Generating .env for $(1)"
-	@printf 'BROKER_ADDR=%s\n' "${BROKER_ADDR:-$(4)}" > .env
+	@printf 'BROKER_ADDR=%s\n' "${BROKER_ADDR:-$(4):50051}" > .env
 	@printf 'DB_ADDRESSES=%s\n' "${DB_ADDRESSES:-$(5)}" >> .env
-	@printf 'BD1_ADDR=%s\n' "${BD1_ADDR:-$(6)}" >> .env
-	@printf 'BD2_ADDR=%s\n' "${BD2_ADDR:-$(7)}" >> .env
-	@printf 'BD3_ADDR=%s\n' "${BD3_ADDR:-$(8)}" >> .env
+	@printf 'BD1_ADDR=%s\n' "${BD1_ADDR:-$(8)}" >> .env
+	@printf 'BD2_ADDR=%s\n' "${BD2_ADDR:-$(9)}" >> .env
+	@printf 'BD3_ADDR=%s\n' "${BD3_ADDR:-$(10)}" >> .env
 	@echo "Building services (in order): ${2}"
 	@echo "Using compose: $(COMPOSE_BIN) $(COMPOSE_ARGS)  (sudo: $(NEED_SUDO))"
 	@# Build each service image only (avoid starting unrelated containers)
@@ -61,11 +61,11 @@ endef
 # Recreate (rm + up --build) services for a VM, removing old containers first
 define run_vm_recreate
 	@echo "Generating .env for $(1)"
-	@printf 'BROKER_ADDR=%s\n' "${BROKER_ADDR:-$(4)}" > .env
+	@printf 'BROKER_ADDR=%s\n' "${BROKER_ADDR:-$(4):50051}" > .env
 	@printf 'DB_ADDRESSES=%s\n' "${DB_ADDRESSES:-$(5)}" >> .env
-	@printf 'BD1_ADDR=%s\n' "${BD1_ADDR:-$(6)}" >> .env
-	@printf 'BD2_ADDR=%s\n' "${BD2_ADDR:-$(7)}" >> .env
-	@printf 'BD3_ADDR=%s\n' "${BD3_ADDR:-$(8)}" >> .env
+	@printf 'BD1_ADDR=%s\n' "${BD1_ADDR:-$(8)}" >> .env
+	@printf 'BD2_ADDR=%s\n' "${BD2_ADDR:-$(9)}" >> .env
+	@printf 'BD3_ADDR=%s\n' "${BD3_ADDR:-$(10)}" >> .env
 	@echo "Recreating services (no-deps): ${2}"
 	@for svc in ${2}; do \
 		echo "-> Removing possible old container for $$svc"; \
@@ -84,11 +84,11 @@ endef
 # Run (up) services for a VM without starting dependencies on that host
 define run_vm_up
 	@echo "Generating .env for $(1)"
-	@printf 'BROKER_ADDR=%s\n' "${BROKER_ADDR:-$(4)}" > .env
+	@printf 'BROKER_ADDR=%s\n' "${BROKER_ADDR:-$(4):50051}" > .env
 	@printf 'DB_ADDRESSES=%s\n' "${DB_ADDRESSES:-$(5)}" >> .env
-	@printf 'BD1_ADDR=%s\n' "${BD1_ADDR:-$(6)}" >> .env
-	@printf 'BD2_ADDR=%s\n' "${BD2_ADDR:-$(7)}" >> .env
-	@printf 'BD3_ADDR=%s\n' "${BD3_ADDR:-$(8)}" >> .env
+	@printf 'BD1_ADDR=%s\n' "${BD1_ADDR:-$(8)}" >> .env
+	@printf 'BD2_ADDR=%s\n' "${BD2_ADDR:-$(9)}" >> .env
+	@printf 'BD3_ADDR=%s\n' "${BD3_ADDR:-$(10)}" >> .env
 	@echo "Starting services (no-deps): ${2}"
 	@for svc in ${2}; do \
 		echo "-> Up $$svc"; \

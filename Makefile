@@ -67,34 +67,34 @@ define run_vm_recreate
 	@printf 'BD2_ADDR=%s\n' "10.35.168.89:50053" >> .env
 	@printf 'BD3_ADDR=%s\n' "10.35.168.90:50054" >> .env
 	@echo "Recreating services (no-deps): ${2}"
-	@tmpfile="/tmp/distrolab2_recreate_$(1).sh"; \
-	printf '%s\n' "#!/bin/sh" > $$tmpfile; \
-	printf '%s\n' "set -eu" >> $$tmpfile; \
+	# create a fixed script path and write the recreation script to it
+	printf '%s\n' "#!/bin/sh" > /tmp/distrolab2_recreate_$(1).sh; \
+	printf '%s\n' "set -eu" >> /tmp/distrolab2_recreate_$(1).sh; \
 	# write SUDO variable for script
-	printf '%s\n' "SUDO='$(NEED_SUDO)'" >> $$tmpfile; \
+	printf '%s\n' "SUDO='$(NEED_SUDO)'" >> /tmp/distrolab2_recreate_$(1).sh; \
 	# pass project name
-	printf '%s\n' "PROJECT='${COMPOSE_PROJECT_NAME:-distrolab2}'" >> $$tmpfile; \
+	printf '%s\n' "PROJECT='${COMPOSE_PROJECT_NAME:-distrolab2}'" >> /tmp/distrolab2_recreate_$(1).sh; \
 	# write services list
-	printf '%s\n' "SERVICES='${2}'" >> $$tmpfile; \
+	printf '%s\n' "SERVICES='${2}'" >> /tmp/distrolab2_recreate_$(1).sh; \
 	# script body: iterate and attempt compose up, fallback to docker run
-	printf '%s\n' "for svc in $$SERVICES; do" >> $$tmpfile; \
-	printf '%s\n' "  echo '-> Removing possible old container for' $$svc" >> $$tmpfile; \
-	printf '%s\n' "  $$SUDO $(COMPOSE_BIN) $(COMPOSE_ARGS) rm -f $$svc 2>/dev/null || true" >> $$tmpfile; \
-	printf '%s\n' "  $$SUDO docker ps -a -q --filter name=$$PROJECT_$$svc 2>/dev/null | xargs -r $$SUDO docker rm -f || true" >> $$tmpfile; \
-	printf '%s\n' "  # also remove any container matching pattern *_<svc>_1 (handles different compose project names)" >> $$tmpfile; \
-	printf '%s\n' "  $$SUDO docker ps -a -q --filter name=_$$svc_1 2>/dev/null | xargs -r $$SUDO docker rm -f || true" >> $$tmpfile; \
-	printf '%s\n' "  echo '-> Recreating' $$svc" >> $$tmpfile; \
-	printf '%s\n' "  if $$SUDO $(COMPOSE_BIN) $(COMPOSE_ARGS) up -d --build --force-recreate --no-deps $$svc 2>/tmp/compose-$$svc.log; then" >> $$tmpfile; \
-	printf '%s\n' "    echo '-> compose up succeeded for' $$svc" >> $$tmpfile; \
-	printf '%s\n' "  else" >> $$tmpfile; \
-	printf '%s\n' "    cat /tmp/compose-$$svc.log 1>&2 || true" >> $$tmpfile; \
-	printf '%s\n' "    $$SUDO docker rm -f $$PROJECT_$$svc 2>/dev/null || true" >> $$tmpfile; \
-	printf '%s\n' "    $$SUDO docker run -d --name $$PROJECT_$$svc --env-file .env distrolab2_$$svc:latest || exit 1" >> $$tmpfile; \
-	printf '%s\n' "  fi" >> $$tmpfile; \
-	printf '%s\n' "done" >> $$tmpfile; \
-	chmod +x $$tmpfile; \
-	$(NEED_SUDO) sh $$tmpfile; \
-	rc=$$?; rm -f $$tmpfile || true; exit $$rc
+	printf '%s\n' "for svc in $$SERVICES; do" >> /tmp/distrolab2_recreate_$(1).sh; \
+	printf '%s\n' "  echo '-> Removing possible old container for' $$svc" >> /tmp/distrolab2_recreate_$(1).sh; \
+	printf '%s\n' "  $$SUDO $(COMPOSE_BIN) $(COMPOSE_ARGS) rm -f $$svc 2>/dev/null || true" >> /tmp/distrolab2_recreate_$(1).sh; \
+	printf '%s\n' "  $$SUDO docker ps -a -q --filter name=$$PROJECT_$$svc 2>/dev/null | xargs -r $$SUDO docker rm -f || true" >> /tmp/distrolab2_recreate_$(1).sh; \
+	printf '%s\n' "  # also remove any container matching pattern *_<svc>_1 (handles different compose project names)" >> /tmp/distrolab2_recreate_$(1).sh; \
+	printf '%s\n' "  $$SUDO docker ps -a -q --filter name=_$$svc_1 2>/dev/null | xargs -r $$SUDO docker rm -f || true" >> /tmp/distrolab2_recreate_$(1).sh; \
+	printf '%s\n' "  echo '-> Recreating' $$svc" >> /tmp/distrolab2_recreate_$(1).sh; \
+	printf '%s\n' "  if $$SUDO $(COMPOSE_BIN) $(COMPOSE_ARGS) up -d --build --force-recreate --no-deps $$svc 2>/tmp/compose-$$svc.log; then" >> /tmp/distrolab2_recreate_$(1).sh; \
+	printf '%s\n' "    echo '-> compose up succeeded for' $$svc" >> /tmp/distrolab2_recreate_$(1).sh; \
+	printf '%s\n' "  else" >> /tmp/distrolab2_recreate_$(1).sh; \
+	printf '%s\n' "    cat /tmp/compose-$$svc.log 1>&2 || true" >> /tmp/distrolab2_recreate_$(1).sh; \
+	printf '%s\n' "    $$SUDO docker rm -f $$PROJECT_$$svc 2>/dev/null || true" >> /tmp/distrolab2_recreate_$(1).sh; \
+	printf '%s\n' "    $$SUDO docker run -d --name $$PROJECT_$$svc --env-file .env distrolab2_$$svc:latest || exit 1" >> /tmp/distrolab2_recreate_$(1).sh; \
+	printf '%s\n' "  fi" >> /tmp/distrolab2_recreate_$(1).sh; \
+	printf '%s\n' "done" >> /tmp/distrolab2_recreate_$(1).sh; \
+	chmod +x /tmp/distrolab2_recreate_$(1).sh; \
+	$(NEED_SUDO) sh /tmp/distrolab2_recreate_$(1).sh; \
+	rc=$$?; rm -f /tmp/distrolab2_recreate_$(1).sh || true; exit $$rc
 endef
 
 # Run (up) services for a VM without starting dependencies on that host

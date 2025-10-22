@@ -69,25 +69,22 @@ define run_vm_recreate
 	@echo "Recreating services (no-deps): ${2}"
 	@for svc in ${2}; do \
 		echo "-> Removing possible old container for $$svc"; \
-		# try compose rm first, fall back to docker rm by name
+		# try compose rm first
 		$(NEED_SUDO) $(COMPOSE_BIN) $(COMPOSE_ARGS) rm -f $$svc 2>/dev/null || true; \
-		# also try removing containers by generic name pattern (avoid nested $() when NEED_SUDO is empty)
-		# use docker ps | xargs to remove any matching containers in a portable way
+		# also try removing containers by generic name pattern
 		$(NEED_SUDO) docker ps -a -q --filter name=$${COMPOSE_PROJECT_NAME:-distrolab2}_$$svc 2>/dev/null | xargs -r $(NEED_SUDO) docker rm -f || true; \
 		echo "-> Recreating $$svc"; \
-		# Try compose up; on failure fall back to docker run using the env file (handles broken docker-compose metadata)
+		# Try compose up; on failure fall back to docker run using the env file
 		if $(NEED_SUDO) $(COMPOSE_BIN) $(COMPOSE_ARGS) up -d --build --force-recreate --no-deps $$svc 2>/tmp/compose-$$svc.log; then \
 			true; \
 		else \
 			cat /tmp/compose-$$svc.log 1>&2 || true; \
-			# fallback: pick an image name matching the project pattern or default to distrolab2_<svc>:latest
-			IMG=$$($(NEED_SUDO) docker images --format '{{.Repository}}:{{.Tag}} {{.ID}}' | awk '/distrolab2_$$svc/ {print $$1; exit}' || echo distrolab2_$$svc:latest); \
-			# remove any old container name and run the image with .env
+			# fallback: run the image we just built using a conventional tag
 			$(NEED_SUDO) docker rm -f $${COMPOSE_PROJECT_NAME:-distrolab2}_$$svc 2>/dev/null || true; \
-			$(NEED_SUDO) docker run -d --name $${COMPOSE_PROJECT_NAME:-distrolab2}_$$svc --env-file .env $${IMG} || exit $$?; \
+			$(NEED_SUDO) docker run -d --name $${COMPOSE_PROJECT_NAME:-distrolab2}_$$svc --env-file .env distrolab2_$$svc:latest || exit $$?; \
 		fi; \
 	done
-	@rm -f .env
+	@if [ -z "$(KEEP_ENV)" ]; then rm -f .env; fi
 	@echo "Recreate finished for $(1)"
 endef
 

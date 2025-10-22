@@ -6,8 +6,8 @@ services:
     ports:
       - "50051:50051"
     environment:
-      - BROKER_ADDR=${BROKER_ADDR:-:50051}
-      - DB_ADDRESSES=${DB_ADDRESSES:-bd1:50052,bd2:50053,bd3:50054}
+      - BROKER_ADDR=${BROKER_ADDR:-10.35.168.112:50051}
+      - DB_ADDRESSES=${DB_ADDRESSES:-10.35.168.88:50052,10.35.168.89:50053,10.35.168.90:50054}
     depends_on:
       - bd1
       - bd2
@@ -21,6 +21,7 @@ services:
       - "50052:50052"
     environment:
       - BD1_ADDR=${BD1_ADDR:-:50052}
+
 
   bd2:
     build:
@@ -47,7 +48,7 @@ services:
     depends_on:
       - broker
     environment:
-      - BROKER_ADDR=${BROKER_ADDR:-broker:50051}
+      - BROKER_ADDR=${BROKER_ADDR:-10.35.168.112:50051}
 
   falabellox:
     build:
@@ -56,7 +57,7 @@ services:
     depends_on:
       - broker
     environment:
-      - BROKER_ADDR=${BROKER_ADDR:-broker:50051}
+      - BROKER_ADDR=${BROKER_ADDR:-10.35.168.112:50051}
 
   parisio:
     build:
@@ -65,4 +66,4 @@ services:
     depends_on:
       - broker
     environment:
-      - BROKER_ADDR=${BROKER_ADDR:-broker:50051}
+      - BROKER_ADDR=${BROKER_ADDR:-10.35.168.112:50051}

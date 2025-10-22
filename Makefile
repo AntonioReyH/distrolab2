@@ -81,6 +81,8 @@ define run_vm_recreate
 	printf '%s\n' "  echo '-> Removing possible old container for' $$svc" >> $$tmpfile; \
 	printf '%s\n' "  $$SUDO $(COMPOSE_BIN) $(COMPOSE_ARGS) rm -f $$svc 2>/dev/null || true" >> $$tmpfile; \
 	printf '%s\n' "  $$SUDO docker ps -a -q --filter name=$$PROJECT_$$svc 2>/dev/null | xargs -r $$SUDO docker rm -f || true" >> $$tmpfile; \
+	printf '%s\n' "  # also remove any container matching pattern *_<svc>_1 (handles different compose project names)" >> $$tmpfile; \
+	printf '%s\n' "  $$SUDO docker ps -a -q --filter name=_$$svc_1 2>/dev/null | xargs -r $$SUDO docker rm -f || true" >> $$tmpfile; \
 	printf '%s\n' "  echo '-> Recreating' $$svc" >> $$tmpfile; \
 	printf '%s\n' "  if $$SUDO $(COMPOSE_BIN) $(COMPOSE_ARGS) up -d --build --force-recreate --no-deps $$svc 2>/tmp/compose-$$svc.log; then" >> $$tmpfile; \
 	printf '%s\n' "    echo '-> compose up succeeded for' $$svc" >> $$tmpfile; \
@@ -157,11 +159,11 @@ docker-all:
 # generate-env target: create a persistent .env for debugging or manual docker run
 define gen_env
 	@echo "Writing persistent .env for $(1)"
-	@printf 'BROKER_ADDR=%s\n' "$${BROKER_ADDR:-$(4):50051}" > .env
-	@printf 'DB_ADDRESSES=%s\n' "$${DB_ADDRESSES:-$(5)}" >> .env
-	@printf 'BD1_ADDR=%s\n' "$${BD1_ADDR:-$(8)}" >> .env
-	@printf 'BD2_ADDR=%s\n' "$${BD2_ADDR:-$(9)}" >> .env
-	@printf 'BD3_ADDR=%s\n' "$${BD3_ADDR:-$(10)}" >> .env
+	@printf 'BROKER_ADDR=%s\n' "10.35.168.112:50051" > .env
+	@printf 'DB_ADDRESSES=%s\n' "10.35.168.88:50052,10.35.168.89:50053,10.35.168.90:50054" >> .env
+	@printf 'BD1_ADDR=%s\n' "10.35.168.88:50052" >> .env
+	@printf 'BD2_ADDR=%s\n' "10.35.168.89:50053" >> .env
+	@printf 'BD3_ADDR=%s\n' "10.35.168.90:50054" >> .env
 	@echo ".env written (KEEP_ENV=1 will preserve it when running other targets)"
 endef
 

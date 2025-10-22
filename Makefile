@@ -71,9 +71,9 @@ define run_vm_recreate
 		echo "-> Removing possible old container for $$svc"; \
 		# try compose rm first, fall back to docker rm by name
 		$(NEED_SUDO) $(COMPOSE_BIN) $(COMPOSE_ARGS) rm -f $$svc 2>/dev/null || true; \
-		# also try removing containers by generic name pattern
-		CID=$$($(NEED_SUDO) docker ps -a -q --filter name=$${COMPOSE_PROJECT_NAME:-distrolab2}_$$svc || true); \
-		if [ -n "$$CID" ]; then $(NEED_SUDO) docker rm -f $$CID || true; fi; \
+		# also try removing containers by generic name pattern (avoid nested $() when NEED_SUDO is empty)
+		# use docker ps | xargs to remove any matching containers in a portable way
+		$(NEED_SUDO) docker ps -a -q --filter name=$${COMPOSE_PROJECT_NAME:-distrolab2}_$$svc 2>/dev/null | xargs -r $(NEED_SUDO) docker rm -f || true; \
 		echo "-> Recreating $$svc"; \
 		$(NEED_SUDO) $(COMPOSE_BIN) $(COMPOSE_ARGS) up -d --build --force-recreate --no-deps $$svc || exit $$?; \
 	done

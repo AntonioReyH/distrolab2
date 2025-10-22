@@ -75,7 +75,17 @@ define run_vm_recreate
 		# use docker ps | xargs to remove any matching containers in a portable way
 		$(NEED_SUDO) docker ps -a -q --filter name=$${COMPOSE_PROJECT_NAME:-distrolab2}_$$svc 2>/dev/null | xargs -r $(NEED_SUDO) docker rm -f || true; \
 		echo "-> Recreating $$svc"; \
-		$(NEED_SUDO) $(COMPOSE_BIN) $(COMPOSE_ARGS) up -d --build --force-recreate --no-deps $$svc || exit $$?; \
+		# Try compose up; on failure fall back to docker run using the env file (handles broken docker-compose metadata)
+		if $(NEED_SUDO) $(COMPOSE_BIN) $(COMPOSE_ARGS) up -d --build --force-recreate --no-deps $$svc 2>/tmp/compose-$$svc.log; then \
+			true; \
+		else \
+			cat /tmp/compose-$$svc.log 1>&2 || true; \
+			# fallback: pick an image name matching the project pattern or default to distrolab2_<svc>:latest
+			IMG=$$($(NEED_SUDO) docker images --format '{{.Repository}}:{{.Tag}} {{.ID}}' | awk '/distrolab2_$$svc/ {print $$1; exit}' || echo distrolab2_$$svc:latest); \
+			# remove any old container name and run the image with .env
+			$(NEED_SUDO) docker rm -f $${COMPOSE_PROJECT_NAME:-distrolab2}_$$svc 2>/dev/null || true; \
+			$(NEED_SUDO) docker run -d --name $${COMPOSE_PROJECT_NAME:-distrolab2}_$$svc --env-file .env $${IMG} || exit $$?; \
+		fi; \
 	done
 	@rm -f .env
 	@echo "Recreate finished for $(1)"
@@ -139,3 +149,28 @@ docker-VM4-recreate:
 # Levanta todo localmente (útil para pruebas)
 docker-all:
 	docker compose up -d --build
+
+# generate-env target: create a persistent .env for debugging or manual docker run
+define gen_env
+	@echo "Writing persistent .env for $(1)"
+	@printf 'BROKER_ADDR=%s\n' "${BROKER_ADDR:-$(4):50051}" > .env
+	@printf 'DB_ADDRESSES=%s\n' "${DB_ADDRESSES:-$(5)}" >> .env
+	@printf 'BD1_ADDR=%s\n' "${BD1_ADDR:-$(8)}" >> .env
+	@printf 'BD2_ADDR=%s\n' "${BD2_ADDR:-$(9)}" >> .env
+	@printf 'BD3_ADDR=%s\n' "${BD3_ADDR:-$(10)}" >> .env
+	@echo ".env written (KEEP_ENV=1 will preserve it when running other targets)"
+endef
+
+.PHONY: generate-env-VM1 generate-env-VM2 generate-env-VM3 generate-env-VM4
+
+generate-env-VM1:
+	$(call gen_env,VM1,${VM1_SVCS},${VM1_IP},${VM4_IP},bd1:${VM2_IP}:50052,bd2:${VM3_IP}:50053,bd3:${VM4_IP}:50054,${VM1_IP}:50052,${VM2_IP}:50053,${VM3_IP}:50054)
+
+generate-env-VM2:
+	$(call gen_env,VM2,${VM2_SVCS},${VM2_IP},${VM4_IP},bd1:${VM1_IP}:50052,bd2:${VM3_IP}:50053,bd3:${VM4_IP}:50054,${VM1_IP}:50052,${VM2_IP}:50053,${VM3_IP}:50054)
+
+generate-env-VM3:
+	$(call gen_env,VM3,${VM3_SVCS},${VM3_IP},${VM4_IP},bd1:${VM1_IP}:50052,bd2:${VM2_IP}:50053,bd3:${VM4_IP}:50054,${VM1_IP}:50052,${VM2_IP}:50053,${VM3_IP}:50054)
+
+generate-env-VM4:
+	$(call gen_env,VM4,${VM4_SVCS},${VM4_IP},${VM4_IP},bd1:${VM1_IP}:50052,bd2:${VM2_IP}:50053,bd3:${VM3_IP}:50054,${VM1_IP}:50052,${VM2_IP}:50053,${VM3_IP}:50054)
